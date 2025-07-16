@@ -92,7 +92,7 @@ const NeuralBackground: React.FC<NeuralBackgroundProps> = ({ theme }) => {
     };
 
     const connect = () => {
-        if(!ctx) return;
+        if(!ctx || !canvas) return;
         let opacityValue = 1;
         for (let a = 0; a < particles.length; a++) {
             for (let b = a; b < particles.length; b++) {
@@ -140,7 +140,9 @@ const NeuralBackground: React.FC<NeuralBackgroundProps> = ({ theme }) => {
     return () => {
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener('resize', resizeCanvas);
-      canvas.removeEventListener('mousemove', handleMouseMove);
+      if (canvas) {
+        canvas.removeEventListener('mousemove', handleMouseMove);
+      }
     };
   }, [theme]);
 

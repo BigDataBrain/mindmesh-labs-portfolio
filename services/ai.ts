@@ -1,14 +1,15 @@
-// import { GoogleGenAI } from '@google/genai';
-
-// IMPORTANT: This file assumes that process.env.API_KEY is available in the execution environment.
-// In a standard browser environment, this would be managed by a build tool like Vite or Create React App.
-// For this environment, it's expected to be set externally.
+// IMPORTANT: The original AI functionality has been disabled for the build process
+// to allow deployment on static hosting platforms like GitHub Pages.
+// The `process.env.API_KEY` is not available in the browser's build environment,
+// causing an error. The code below provides a mock response.
+// To re-enable AI, you would need to run this in a local development
+// environment with a configured .env file.
 
 /*
+// --- ORIGINAL CODE ---
+import { GoogleGenAI } from '@google/genai';
+
 const getApiKey = (): string => {
-    // In a real build system, `process.env.API_KEY` would be replaced at build time.
-    // For this environment, we are assuming it is available.
-    // Ensure you have a valid API Key set in your environment variables.
     const apiKey = process.env.API_KEY;
     if (!apiKey) {
         console.error("API_KEY environment variable not set.");
@@ -24,18 +25,9 @@ try {
 } catch(e) {
     console.error(e);
 }
-*/
 
 
 export const askAboutProject = async (projectContext: string, question: string): Promise<string> => {
-    console.log("AI functionality is currently disabled for deployment. Returning a mock response.", { projectContext, question });
-    
-    // To simulate a network delay, making it feel like a real API call
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    return "The AI assistant is currently offline. This feature has been temporarily disabled to allow for deployment. Please configure your API key locally to re-enable.";
-    
-    /* Original AI call logic to be restored later
     if(!ai) {
         throw new Error("GoogleGenAI client not initialized. Check your API key.");
     }
@@ -85,5 +77,15 @@ ${projectContext}
         }
         throw new Error(errorMessage);
     }
-    */
+};
+// --- END OF ORIGINAL CODE ---
+*/
+
+export const askAboutProject = async (projectContext: string, question: string): Promise<string> => {
+    console.log("AI functionality is currently disabled for this deployment build. Returning a mock response.", { projectContext, question });
+    
+    // Simulate a network delay to make it feel like a real API call
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    return "The AI assistant is currently offline. This feature is disabled in the deployed version to allow the project to build successfully. To use this feature, please run the project in a local development environment with a valid API key.";
 };
