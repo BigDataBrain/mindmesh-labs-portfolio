@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Project, Lead, Settings } from '../types';
+import { Project, Lead } from '../types';
 import { api } from '../services/api';
 import Header from '../components/Header';
 import ProjectGrid from '../components/ProjectGrid';
@@ -25,7 +25,6 @@ type SettingsView = 'general' | 'security';
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onGoToPublic, theme, toggleTheme }) => {
     const [projects, setProjects] = useState<Project[]>([]);
     const [leads, setLeads] = useState<Lead[]>([]);
-    const [settings, setSettings] = useState<Settings>(api.getSettings());
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingProject, setEditingProject] = useState<Project | null>(null);
     const [currentView, setCurrentView] = useState<AdminView>('projects');
@@ -34,7 +33,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onGoToPublic,
     const loadData = useCallback(() => {
         setProjects(api.getProjects());
         setLeads(api.getLeads());
-        setSettings(api.getSettings());
     }, []);
 
     useEffect(() => {

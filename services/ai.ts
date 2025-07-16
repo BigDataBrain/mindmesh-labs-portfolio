@@ -1,9 +1,10 @@
-import { GoogleGenAI } from '@google/genai';
+// import { GoogleGenAI } from '@google/genai';
 
 // IMPORTANT: This file assumes that process.env.API_KEY is available in the execution environment.
 // In a standard browser environment, this would be managed by a build tool like Vite or Create React App.
 // For this environment, it's expected to be set externally.
 
+/*
 const getApiKey = (): string => {
     // In a real build system, `process.env.API_KEY` would be replaced at build time.
     // For this environment, we are assuming it is available.
@@ -23,9 +24,18 @@ try {
 } catch(e) {
     console.error(e);
 }
+*/
 
 
 export const askAboutProject = async (projectContext: string, question: string): Promise<string> => {
+    console.log("AI functionality is currently disabled for deployment. Returning a mock response.", { projectContext, question });
+    
+    // To simulate a network delay, making it feel like a real API call
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    return "The AI assistant is currently offline. This feature has been temporarily disabled to allow for deployment. Please configure your API key locally to re-enable.";
+    
+    /* Original AI call logic to be restored later
     if(!ai) {
         throw new Error("GoogleGenAI client not initialized. Check your API key.");
     }
@@ -75,4 +85,5 @@ ${projectContext}
         }
         throw new Error(errorMessage);
     }
+    */
 };
