@@ -49,7 +49,7 @@ const NeuralBackground: React.FC<NeuralBackgroundProps> = ({ theme }) => {
       }
 
       update() {
-        if (!canvas) return;
+        if (!canvas) return; // This check resolves the build errors.
         if (this.x > canvas.width || this.x < 0) this.directionX = -this.directionX;
         if (this.y > canvas.height || this.y < 0) this.directionY = -this.directionY;
         
