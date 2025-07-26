@@ -7,23 +7,31 @@ const ContactForm: React.FC = () => {
   const [message, setMessage] = useState('');
   const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus('sending');
-    const settings = api.getSettings();
+    
+    try {
+        const settings = await api.getSettings();
 
-    // Simulate API call
-    console.log(`Simulating sending email to ${settings.contactEmail} from ${email}`);
-    console.log({ name, email, message });
+        // This is where you would integrate a real email sending service
+        // like SendGrid, Mailgun, or a serverless function.
+        // For now, we continue to simulate it.
+        console.log(`Simulating sending email to ${settings.contactEmail} from ${email}`);
+        console.log({ name, email, message });
 
-    setTimeout(() => {
-      // Simulate success
-      setStatus('success');
-      setName('');
-      setEmail('');
-      setMessage('');
-      setTimeout(() => setStatus('idle'), 5000);
-    }, 1000);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      
+        setStatus('success');
+        setName('');
+        setEmail('');
+        setMessage('');
+        setTimeout(() => setStatus('idle'), 5000);
+
+    } catch (error) {
+        console.error("Failed to send contact message:", error);
+        setStatus('error');
+    }
   };
   
   const InputField: React.FC<React.InputHTMLAttributes<HTMLInputElement> & { label: string }> = ({ label, ...props }) => (

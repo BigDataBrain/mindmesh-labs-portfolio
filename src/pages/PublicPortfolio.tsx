@@ -17,7 +17,8 @@ interface PublicPortfolioProps {
 
 const PublicPortfolio: React.FC<PublicPortfolioProps> = ({ theme, toggleTheme, onGoToAdmin }) => {
   const [projects, setProjects] = useState<Project[]>([]);
-  const [settings, setSettings] = useState<Settings>(api.getSettings());
+  const [settings, setSettings] = useState<Settings | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [techFilter, setTechFilter] = useState('All');
   const [sortBy, setSortBy] = useState('Most Recent');
@@ -26,17 +27,31 @@ const PublicPortfolio: React.FC<PublicPortfolioProps> = ({ theme, toggleTheme, o
   const [isDetailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
-  useEffect(() => {
-    const allProjects = api.getProjects();
-    setProjects(allProjects.filter(p => p.isActive));
-    setSettings(api.getSettings());
+  const loadData = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const [allProjects, siteSettings] = await Promise.all([
+        api.getProjects(),
+        api.getSettings(),
+      ]);
+      setProjects(allProjects.filter(p => p.isActive));
+      setSettings(siteSettings);
+    } catch (error) {
+      console.error("Failed to load portfolio data:", error);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
-  const handleReset = useCallback(() => {
-    setSearchTerm('');
-    setTechFilter('All');
-    setSortBy('Most Recent');
-  }, []);
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // const handleReset = useCallback(() => {
+  //   setSearchTerm('');
+  //   setTechFilter('All');
+  //   setSortBy('Most Recent');
+  // }, []);
 
   const availableTechs = useMemo(() => {
     const allTechs = new Set(projects.flatMap(p => p.technologies));
@@ -53,9 +68,9 @@ const PublicPortfolio: React.FC<PublicPortfolioProps> = ({ theme, toggleTheme, o
     setDetailModalOpen(true);
   };
 
-  const handleLeadSubmit = (email: string, phone: string) => {
+  const handleLeadSubmit = async (email: string, phone: string) => {
     if (selectedProject) {
-        api.createLead({ email, phone, projectId: selectedProject.id, projectName: selectedProject.name });
+        await api.createLead({ email, phone, projectId: selectedProject.id, projectName: selectedProject.name });
         setLeadModalOpen(false);
         window.open(selectedProject.projectUrl, '_blank');
         setSelectedProject(null);
@@ -88,35 +103,43 @@ const PublicPortfolio: React.FC<PublicPortfolioProps> = ({ theme, toggleTheme, o
     <div className="flex flex-col min-h-screen">
       <main className="flex-grow max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-12 w-full">
         <Header 
-            title={settings.siteTitle}
-            subtitle={settings.siteTagline}
-            aboutMe={settings.aboutMe}
-            onRefresh={handleReset} 
+            title={settings?.siteTitle || "Portfolio"}
+            subtitle={settings?.siteTagline || "Loading..."}
+            aboutMe={settings?.aboutMe}
+            onRefresh={loadData} 
             theme={theme} 
             toggleTheme={toggleTheme}
         />
         <div className="border-b border-gray-200 dark:border-[#30363d] my-8"></div>
-        <FilterBar
-          searchTerm={searchTerm} onSearchTermChange={setSearchTerm}
-          techFilter={techFilter} onTechFilterChange={setTechFilter}
-          availableTechs={availableTechs}
-          sortBy={sortBy} onSortByChange={setSortBy}
-        />
-        {filteredAndSortedProjects.length > 0 ? (
-           <ProjectGrid 
-                projects={filteredAndSortedProjects} 
-                mode="public" 
-                onViewDetails={handleOpenLeadModal}
-                onSeeMore={handleOpenDetailModal}
-            />
+        {isLoading ? (
+            <div className="text-center py-16 text-gray-500 dark:text-gray-400">
+                <h3 className="text-xl font-semibold">Loading Projects...</h3>
+            </div>
         ) : (
-          <div className="text-center py-16 text-gray-500 dark:text-gray-400">
-            <h3 className="text-xl font-semibold">No Projects Found</h3>
-            <p>Try adjusting your search or filter criteria.</p>
-          </div>
+          <>
+            <FilterBar
+              searchTerm={searchTerm} onSearchTermChange={setSearchTerm}
+              techFilter={techFilter} onTechFilterChange={setTechFilter}
+              availableTechs={availableTechs}
+              sortBy={sortBy} onSortByChange={setSortBy}
+            />
+            {filteredAndSortedProjects.length > 0 ? (
+               <ProjectGrid 
+                    projects={filteredAndSortedProjects} 
+                    mode="public" 
+                    onViewDetails={handleOpenLeadModal}
+                    onSeeMore={handleOpenDetailModal}
+                />
+            ) : (
+              <div className="text-center py-16 text-gray-500 dark:text-gray-400">
+                <h3 className="text-xl font-semibold">No Projects Found</h3>
+                <p>Try adjusting your search or filter criteria.</p>
+              </div>
+            )}
+            <div className="border-b border-gray-200 dark:border-[#30363d] my-12"></div>
+            <ContactForm />
+          </>
         )}
-        <div className="border-b border-gray-200 dark:border-[#30363d] my-12"></div>
-        <ContactForm />
       </main>
       <Footer onGoToAdmin={onGoToAdmin} />
       {selectedProject && (

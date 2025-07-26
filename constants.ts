@@ -52,5 +52,5 @@ export const INITIAL_SETTINGS: Settings = {
     contactEmail: 'your-email@example.com',
     siteTitle: 'MindMesh Labs',
     siteTagline: 'Built by Devs. Backed by AI.',
-    aboutMe: 'Welcome to my portfolio! I am a passionate developer specializing in creating modern, responsive, and user-friendly web applications. With a strong foundation in both front-end and back-end technologies, I enjoy bringing ideas to life and solving complex problems. Feel free to browse my work and get in touch!'
+    aboutMe: 'Welcome. I’m a technologist and ecosystem architect who thrives at the intersection of elegance and automation. Over the years, I’ve built branded command centers, streamlined operations, and deployed AI-powered interfaces that do more than just impress—they perform. Every project starts with a question: how can we turn complexity into clarity? My answer is always the same—let’s build ecosystems that think, adapt, and scale. Feel free to browse my work and get in touch!'
 };

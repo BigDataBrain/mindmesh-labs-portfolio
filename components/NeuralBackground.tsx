@@ -49,7 +49,6 @@ const NeuralBackground: React.FC<NeuralBackgroundProps> = ({ theme }) => {
       }
 
       update() {
-        if (!canvas) return; // This check resolves the build errors.
         if (this.x > canvas.width || this.x < 0) this.directionX = -this.directionX;
         if (this.y > canvas.height || this.y < 0) this.directionY = -this.directionY;
         
@@ -92,7 +91,7 @@ const NeuralBackground: React.FC<NeuralBackgroundProps> = ({ theme }) => {
     };
 
     const connect = () => {
-        if(!ctx || !canvas) return;
+        if(!ctx) return;
         let opacityValue = 1;
         for (let a = 0; a < particles.length; a++) {
             for (let b = a; b < particles.length; b++) {
@@ -140,9 +139,7 @@ const NeuralBackground: React.FC<NeuralBackgroundProps> = ({ theme }) => {
     return () => {
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener('resize', resizeCanvas);
-      if (canvas) {
-        canvas.removeEventListener('mousemove', handleMouseMove);
-      }
+      canvas.removeEventListener('mousemove', handleMouseMove);
     };
   }, [theme]);
 

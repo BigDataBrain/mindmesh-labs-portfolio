@@ -11,7 +11,7 @@ const getApiKey = (): string => {
     const apiKey = process.env.API_KEY;
     if (!apiKey) {
         console.error("API_KEY environment variable not set.");
-        throw new Error("API Key is missing. Please set the API_KEY environment variable.");
+        throw new Error("API Key is missing. Please set the API_KEY environment variable in your deployment settings.");
     }
     return apiKey;
 };
@@ -27,7 +27,7 @@ try {
 
 export const askAboutProject = async (projectContext: string, question: string): Promise<string> => {
     if(!ai) {
-        throw new Error("GoogleGenAI client not initialized. Check your API key.");
+        throw new Error("GoogleGenAI client not initialized. Please check your API key is configured correctly in your deployment environment.");
     }
 
     const model = 'gemini-2.5-flash';
@@ -55,8 +55,10 @@ ${projectContext}
             }
         });
 
-        if (response && response.text) {
-            return response.text;
+        const text = response.text;
+
+        if (text) {
+            return text;
         } else {
             return "I received a response, but it was empty. The model may not have had an answer based on the context.";
         }
@@ -66,7 +68,7 @@ ${projectContext}
         let errorMessage = "An error occurred while communicating with the AI. Please try again later.";
         if (error instanceof Error) {
             if (error.message.includes('API key not valid')) {
-                errorMessage = "The provided API Key is not valid. Please check your credentials.";
+                errorMessage = "The provided API Key is not valid. Please check your credentials in your deployment settings.";
             } else if (error.message.includes('fetch')) {
                  errorMessage = "A network error occurred. Please check your connection and firewall settings.";
             } else {

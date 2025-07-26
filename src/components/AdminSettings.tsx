@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { api } from '../services/api';
 import { Settings } from '../types';
 
 interface AdminSettingsProps {
+    initialSettings: Settings;
     onSettingsUpdate: () => void;
 }
 
@@ -28,24 +29,30 @@ const TextAreaField: React.FC<React.TextareaHTMLAttributes<HTMLTextAreaElement> 
 );
 
 
-const AdminSettings: React.FC<AdminSettingsProps> = ({ onSettingsUpdate }) => {
-    const [settings, setSettings] = useState<Settings>(api.getSettings());
+const AdminSettings: React.FC<AdminSettingsProps> = ({ initialSettings, onSettingsUpdate }) => {
+    const [settings, setSettings] = useState<Settings>(initialSettings);
     const [saveStatus, setSaveStatus] = useState('');
-
-    useEffect(() => {
-        setSettings(api.getSettings());
-    }, []);
+    const [isLoading, setIsLoading] = useState(false);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setSettings(prev => ({...prev, [e.target.name]: e.target.value}));
     };
 
-    const handleSave = (e: React.FormEvent) => {
+    const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
-        api.updateSettings(settings);
-        onSettingsUpdate();
-        setSaveStatus('Settings saved successfully!');
-        setTimeout(() => setSaveStatus(''), 3000);
+        setIsLoading(true);
+        setSaveStatus('');
+        try {
+            await api.updateSettings(settings);
+            onSettingsUpdate();
+            setSaveStatus('Settings saved successfully!');
+        } catch (error) {
+            setSaveStatus('Error saving settings.');
+            console.error(error);
+        } finally {
+            setIsLoading(false);
+            setTimeout(() => setSaveStatus(''), 3000);
+        }
     };
 
     return (
@@ -61,9 +68,9 @@ const AdminSettings: React.FC<AdminSettingsProps> = ({ onSettingsUpdate }) => {
             </div>
 
             <div className="flex justify-end items-center space-x-4">
-                {saveStatus && <p className="text-green-500 text-sm">{saveStatus}</p>}
-                <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-sm transition-colors">
-                    Save Settings
+                {saveStatus && <p className={`${saveStatus.includes('Error') ? 'text-red-500' : 'text-green-500'} text-sm`}>{saveStatus}</p>}
+                <button type="submit" disabled={isLoading} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-sm transition-colors disabled:bg-blue-400 disabled:cursor-not-allowed">
+                    {isLoading ? 'Saving...' : 'Save Settings'}
                 </button>
             </div>
         </form>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Project, Lead } from '../types';
+import { Project, Lead, Settings } from '../types';
 import { api } from '../services/api';
 import Header from '../components/Header';
 import ProjectGrid from '../components/ProjectGrid';
@@ -25,14 +25,30 @@ type SettingsView = 'general' | 'security';
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onGoToPublic, theme, toggleTheme }) => {
     const [projects, setProjects] = useState<Project[]>([]);
     const [leads, setLeads] = useState<Lead[]>([]);
+    const [settings, setSettings] = useState<Settings | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingProject, setEditingProject] = useState<Project | null>(null);
     const [currentView, setCurrentView] = useState<AdminView>('projects');
     const [currentSettingsView, setCurrentSettingsView] = useState<SettingsView>('general');
 
-    const loadData = useCallback(() => {
-        setProjects(api.getProjects());
-        setLeads(api.getLeads());
+    const loadData = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const [projectsData, leadsData, settingsData] = await Promise.all([
+                api.getProjects(),
+                api.getLeads(),
+                api.getSettings(),
+            ]);
+            setProjects(projectsData);
+            setLeads(leadsData);
+            setSettings(settingsData);
+        } catch (error) {
+            console.error("Failed to load admin data:", error);
+            // Optionally, set an error state to show in the UI
+        } finally {
+            setIsLoading(false);
+        }
     }, []);
 
     useEffect(() => {
@@ -54,26 +70,26 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onGoToPublic,
         setEditingProject(null);
     };
 
-    const handleFormSubmit = (projectData: Omit<Project, 'id'> | Project) => {
+    const handleFormSubmit = async (projectData: Omit<Project, 'id' | 'created_at'> | Project) => {
         if ('id' in projectData) {
-            api.updateProject(projectData as Project);
+            await api.updateProject(projectData as Project);
         } else {
-            api.createProject(projectData);
+            await api.createProject(projectData);
         }
-        loadData();
+        await loadData();
         handleCloseModal();
     };
     
-    const handleDeleteProject = (projectId: number) => {
-        api.deleteProject(projectId);
-        loadData();
+    const handleDeleteProject = async (projectId: number) => {
+        await api.deleteProject(projectId);
+        await loadData();
     };
 
-    const handleToggleStatus = (projectId: number) => {
+    const handleToggleStatus = async (projectId: number) => {
         const project = projects.find(p => p.id === projectId);
         if (project) {
-            api.updateProject({ ...project, isActive: !project.isActive });
-            loadData();
+            await api.updateProject({ ...project, isActive: !project.isActive });
+            await loadData();
         }
     };
 
@@ -141,7 +157,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onGoToPublic,
                     </button>
                 </div>
                 
-                {currentView === 'projects' && (
+                 {isLoading ? (
+                     <div className="text-center py-16 text-gray-500 dark:text-gray-400">
+                        <h3 className="text-xl font-semibold">Loading Dashboard Data...</h3>
+                     </div>
+                ) : currentView === 'projects' ? (
                     <>
                         <StatsSummary projects={projects} />
                         <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-12 mb-6">Projects</h2>
@@ -156,15 +176,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onGoToPublic,
                          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-12 mb-6">Lead Log</h2>
                          <LeadLogTable leads={leads} />
                     </>
-                )}
-
-                {currentView === 'settings' && (
+                ) : currentView === 'settings' && (
                     <div className="bg-white dark:bg-[#161B22] border border-gray-200 dark:border-[#30363d] rounded-lg p-6">
                         <div className="flex items-center space-x-2 border-b border-gray-200 dark:border-[#30363d] pb-4 mb-6">
                             <SettingsTabButton isActive={currentSettingsView === 'general'} onClick={() => setCurrentSettingsView('general')}>General</SettingsTabButton>
                             <SettingsTabButton isActive={currentSettingsView === 'security'} onClick={() => setCurrentSettingsView('security')}>Security</SettingsTabButton>
                         </div>
-                        {currentSettingsView === 'general' && <AdminSettings onSettingsUpdate={loadData} />}
+                        {currentSettingsView === 'general' && settings && <AdminSettings initialSettings={settings} onSettingsUpdate={loadData} />}
                         {currentSettingsView === 'security' && <CredentialsSettings />}
                     </div>
                 )}

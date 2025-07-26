@@ -10,6 +10,7 @@ export interface Project {
   isActive: boolean;
   avatar: string; 
   avatarColor: string;
+  created_at: string;
 }
 
 export interface Lead {
@@ -19,15 +20,11 @@ export interface Lead {
     projectId: number;
     projectName: string;
     date: string;
-}
-
-export interface Credentials {
-    username: string;
-    password: string;
-    secretKey: string;
+    created_at: string;
 }
 
 export interface Settings {
+    id: number;
     contactEmail: string;
     siteTitle: string;
     siteTagline: string;

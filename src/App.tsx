@@ -10,13 +10,15 @@ type View = 'public' | 'login' | 'admin';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('public');
-  const [isAuthenticated, setIsAuthenticated] = useState(api.isAuthenticated());
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthLoading, setAuthLoading] = useState(true);
   const [theme, setTheme] = useState<'dark' | 'light'>(
     localStorage.getItem('theme') === 'light' ? 'light' : 'dark'
   );
   const [isBooting, setIsBooting] = useState(true);
 
   useEffect(() => {
+    // Theme setup
     if (theme === 'dark') {
       document.documentElement.classList.add('dark');
       document.body.style.backgroundColor = '#010409';
@@ -26,16 +28,37 @@ const App: React.FC = () => {
     }
     localStorage.setItem('theme', theme);
   }, [theme]);
+  
+  useEffect(() => {
+    const checkSession = async () => {
+        const session = await api.getSession();
+        setIsAuthenticated(!!session);
+        setAuthLoading(false);
+    };
+    checkSession();
+
+    const { subscription } = api.onAuthStateChange((_event, session) => {
+        setIsAuthenticated(!!session);
+        if (_event === 'SIGNED_IN') {
+             setCurrentView('admin');
+        }
+        if (_event === 'SIGNED_OUT') {
+            setCurrentView('public');
+        }
+    });
+
+    return () => {
+        subscription.unsubscribe();
+    };
+}, []);
 
   const handleLoginSuccess = () => {
-    setIsAuthenticated(true);
-    setCurrentView('admin');
+    // onAuthStateChange will handle setting authenticated state and view
   };
 
-  const handleLogout = () => {
-    api.logout();
-    setIsAuthenticated(false);
-    setCurrentView('public');
+  const handleLogout = async () => {
+    await api.logout();
+    // onAuthStateChange will handle setting authenticated state and view
   };
 
   const toggleTheme = () => {
@@ -54,7 +77,7 @@ const App: React.FC = () => {
     return <PublicPortfolio onGoToAdmin={() => setCurrentView('login')} theme={theme} toggleTheme={toggleTheme} />;
   }
 
-  if (isBooting) {
+  if (isBooting || isAuthLoading) {
     return <BootLoader onBootComplete={() => setIsBooting(false)} />;
   }
 

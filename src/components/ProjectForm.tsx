@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Project } from '../types';
 
 interface ProjectFormProps {
-  onSubmit: (projectData: Omit<Project, 'id'> | Project) => void;
+  onSubmit: (projectData: Omit<Project, 'id' | 'created_at'> | Project) => void;
   onClose: () => void;
   initialData?: Project | null;
 }
@@ -36,7 +36,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ onSubmit, onClose, initialDat
     longDescription: '',
     projectUrl: '',
     technologies: '',
-    complexity: '5.0',
+    complexity: 5.0,
     projectDate: new Date().toISOString().split('T')[0],
     isActive: true,
     avatar: 'robot-1',
@@ -46,9 +46,16 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ onSubmit, onClose, initialDat
   useEffect(() => {
     if (initialData) {
       setFormData({
-        ...initialData,
+        name: initialData.name,
+        shortDescription: initialData.shortDescription,
+        longDescription: initialData.longDescription,
+        projectUrl: initialData.projectUrl,
         technologies: initialData.technologies.join(', '),
-        complexity: String(initialData.complexity),
+        complexity: initialData.complexity,
+        projectDate: initialData.projectDate,
+        isActive: initialData.isActive,
+        avatar: initialData.avatar,
+        avatarColor: initialData.avatarColor,
       });
     }
   }, [initialData]);
@@ -65,16 +72,20 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ onSubmit, onClose, initialDat
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const projectData = {
+    
+    // Base data for both create and update
+    const projectPayload = {
       ...formData,
-      complexity: parseFloat(formData.complexity),
+      complexity: parseFloat(String(formData.complexity)),
       technologies: formData.technologies.split(',').map(tech => tech.trim()).filter(Boolean),
     };
     
     if (initialData) {
-        onSubmit({ ...initialData, ...projectData });
+        // This is an update, include the id
+        onSubmit({ ...initialData, ...projectPayload });
     } else {
-        onSubmit(projectData);
+        // This is a create, the API will handle omitting id and created_at
+        onSubmit(projectPayload);
     }
   };
 
@@ -95,7 +106,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ onSubmit, onClose, initialDat
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <InputField label="Project Date" name="projectDate" type="date" value={formData.projectDate} onChange={handleChange} required />
-        <InputField label="Complexity (1.0 - 10.0)" name="complexity" type="number" value={formData.complexity} onChange={handleChange} step="0.1" min="1" max="10" required />
+        <InputField label="Complexity (1.0 - 10.0)" name="complexity" type="number" value={formData.complexity} onChange={e => setFormData({...formData, complexity: parseFloat(e.target.value)})} step="0.1" min="1" max="10" required />
       </div>
 
        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
