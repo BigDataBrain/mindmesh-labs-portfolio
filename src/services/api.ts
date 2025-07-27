@@ -87,18 +87,17 @@ export const api = {
 
         if (error) {
             console.error("Error fetching settings, returning fallback.", error);
+            // This ensures the app doesn't crash if settings can't be fetched on first load.
             return { id: 1, siteTitle: 'MindMesh Labs', siteTagline: 'Portfolio', aboutMe: 'Welcome!', contactEmail: '' };
         }
         return data;
     },
 
-    updateSettings: async (newSettings: Settings): Promise<Settings> => {
+    updateSettings: async (newSettings: Omit<Settings, 'id'>): Promise<Settings> => {
         // The settings table is assumed to have a single row with id=1
-        // We exclude the id from the update payload.
-        const { id, ...settingsToUpdate } = newSettings;
         const { data, error } = await supabase
             .from('settings')
-            .update(settingsToUpdate)
+            .update(newSettings)
             .eq('id', 1) 
             .select()
             .single();

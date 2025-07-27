@@ -1,11 +1,12 @@
 # MindMesh Labs Portfolio
 
-A full-featured portfolio platform for developers to showcase their work and capture leads. This version is integrated with Supabase for a persistent backend database and authentication.
+A full-featured portfolio platform for developers to showcase their work and capture leads. This version is integrated with Supabase for a persistent backend and Google Gemini for AI-powered features.
 
 ## Features
 
 - **Supabase Backend:** All data is stored in a central, persistent PostgreSQL database.
 - **Secure Authentication:** User login is handled by Supabase Auth.
+- **AI-Powered Q&A:** Visitors can ask questions about your projects and get answers from a Gemini-powered AI bot.
 - **Public Portfolio:** Showcase projects with descriptions, tech stacks, and complexity ratings, fetched live from the database.
 - **Admin Dashboard:** A secure area to manage projects, view captured leads, and update site settings.
 - **Lead Capture:** Forms to capture contact information from potential clients, saved directly to your database.
@@ -15,19 +16,19 @@ A full-featured portfolio platform for developers to showcase their work and cap
 
 ---
 
-## Deployment Guide: From Local to Live with Supabase
+## Setup & Deployment Guide
 
-Follow these instructions carefully to get your portfolio live.
+Follow these instructions carefully to get your portfolio running both locally and on a hosting provider like Vercel.
 
 ### Part 1: Set Up Your Supabase Backend
 
 1.  **Create a Supabase Project:**
     *   Go to [supabase.com](https://supabase.com), sign up, and create a new project.
-    *   Save your **Project URL** and **`anon` public key**. You will need them later.
+    *   Save your **Project URL** and **`anon` public key**. You will need them in Part 2.
 
 2.  **Create Database Tables:**
     *   In your Supabase project dashboard, navigate to the `SQL Editor`.
-    *   Click `+ New query` and paste the entire content of the SQL script below. This will create your `projects`, `settings`, and `leads` tables.
+    *   Click `+ New query` and paste the entire content of the SQL script below. This will create your `projects`, `settings`, and `leads` tables and set up security policies.
     *   Click `RUN` to execute the script.
 
     ```sql
@@ -94,27 +95,74 @@ Follow these instructions carefully to get your portfolio live.
 
 3.  **Create Your Admin User:**
     *   In the Supabase dashboard, go to `Authentication` -> `Users`.
-    *   Click `+ Add user` and create a user with an email and a strong password. **This will be your new admin login.**
+    *   Click `+ Add user` and create a user with an email and a strong password. **This will be your admin login.**
     *   **Important**: You might receive a confirmation email. Make sure to confirm the user.
 
-### Part 2: Deploy on Vercel (or other host)
+### Part 2: Configure Your Application Environment
+
+**For Local Development:**
+
+1.  **Get a Gemini API Key:**
+    *   Go to [Google AI Studio](https://aistudio.google.com/app/apikey) to generate your API key for the Gemini AI bot.
+
+2.  **Create `.env` file:**
+    *   In the root directory of the project, create a file named `.env`.
+    *   Copy the following content into it, replacing the placeholder values with your actual keys from Supabase and Google.
+
+    ```env
+    # .env file for local development
+
+    # Get this from your Supabase Project Settings -> API
+    VITE_SUPABASE_URL="https://your-project-url.supabase.co"
+    VITE_SUPABASE_ANON_KEY="your-public-anon-key"
+
+    # Get this from Google AI Studio
+    VITE_API_KEY="your-gemini-api-key"
+    ```
+
+3.  **Run the App:**
+    *   Open your terminal, run `npm install`, and then `npm run dev`. Your portfolio should now be running locally.
+
+**For Deployment (Vercel, Netlify, etc.):**
 
 1.  **Push Code to GitHub:** Make sure your latest code is on a GitHub repository.
 
-2.  **Import Project to Vercel:**
-    *   Log in to Vercel and import your GitHub repository.
-    *   Vercel should auto-detect the Vite configuration. The build settings should be `npm run build` and the output directory `dist`.
+2.  **Import Project to Host:**
+    *   Log in to your hosting provider (e.g., Vercel) and import your GitHub repository.
+    *   The build settings should be automatically detected (Vite, `npm run build`, output directory `dist`).
 
 3.  **Add Environment Variables:**
-    *   In your Vercel project settings, navigate to `Settings` -> `Environment Variables`.
-    *   Add the following variables. These are **required** for the app to work.
+    *   In your host's project settings dashboard, navigate to the Environment Variables section.
+    *   Add the following variables. These are **required** for the live app to work.
 
     | Key                       | Value                                         |
     | ------------------------- | --------------------------------------------- |
     | `VITE_SUPABASE_URL`       | Your Supabase project URL.                    |
     | `VITE_SUPABASE_ANON_KEY`  | Your Supabase `anon` public key.              |
-    | `API_KEY`                 | Your Google Gemini API Key (for the AI Bot).  |
+    | `VITE_API_KEY`            | Your Google Gemini API Key (for the AI Bot).  |
 
 4.  **Deploy:**
-    *   Trigger a new deployment in Vercel. It will use the environment variables you just set.
+    *   Trigger a new deployment. It will use the environment variables you just set.
     *   Your site is now live! You can log in to the admin panel using the email and password you created in Supabase.
+
+
+Option 1: Clone into a temp folder, then swap contents
+cd ~/Desktop  # or any neutral location
+git clone https://github.com/portfolio.git temp-repo
+cd temp-repo
+rm -rf *      # wipe contents safely
+
+# Then copy your React build into temp-repo
+cp -r ~/path-to-your-react-app/* .
+
+Option 2: Use your current React app and link it directly
+cd /path/to/your-react-app
+
+# Clean Git slate (if needed)
+rm -rf .git
+git init
+git remote add origin https://github.com/portfolio.git
+git add .
+git commit -m "Fresh React deployment"
+git push -u origin main --force
+

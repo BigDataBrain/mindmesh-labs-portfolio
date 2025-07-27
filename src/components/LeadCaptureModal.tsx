@@ -4,7 +4,7 @@ import Modal from './Modal';
 interface LeadCaptureModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (email: string, phone: string) => void;
+  onSubmit: (email: string, phone: string) => Promise<void>;
   projectName: string;
 }
 
@@ -21,11 +21,12 @@ const LeadCaptureModal: React.FC<LeadCaptureModalProps> = ({ isOpen, onClose, on
   };
 
   const validatePhone = (phone: string) => {
-    const re = /^[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,6}$/im;
+    // A more permissive phone validation regex
+    const re = /^[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,9}$/im;
     return re.test(String(phone));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     let isValid = true;
     setEmailError('');
@@ -42,8 +43,11 @@ const LeadCaptureModal: React.FC<LeadCaptureModalProps> = ({ isOpen, onClose, on
 
     if (isValid) {
       setIsSubmitting(true);
-      onSubmit(email, phone);
-      // The parent component will handle closing the modal and other actions.
+      try {
+        await onSubmit(email, phone);
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
   
@@ -72,6 +76,7 @@ const LeadCaptureModal: React.FC<LeadCaptureModalProps> = ({ isOpen, onClose, on
           onChange={(e) => setEmail(e.target.value)}
           error={emailError}
           required
+          disabled={isSubmitting}
         />
         <InputField
           label="Phone Number"
@@ -80,9 +85,10 @@ const LeadCaptureModal: React.FC<LeadCaptureModalProps> = ({ isOpen, onClose, on
           onChange={(e) => setPhone(e.target.value)}
           error={phoneError}
           required
+          disabled={isSubmitting}
         />
         <div className="flex justify-end space-x-4 pt-4">
-          <button type="button" onClick={onClose} className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition-colors">
+          <button type="button" onClick={onClose} className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition-colors" disabled={isSubmitting}>
             Cancel
           </button>
           <button type="submit" disabled={isSubmitting} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors disabled:bg-blue-400 disabled:cursor-not-allowed">

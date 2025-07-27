@@ -1,17 +1,14 @@
 import { GoogleGenAI } from '@google/genai';
 
-// IMPORTANT: This file assumes that process.env.API_KEY is available in the execution environment.
-// In a standard browser environment, this would be managed by a build tool like Vite or Create React App.
-// For this environment, it's expected to be set externally.
+// IMPORTANT: This file uses `import.meta.env.VITE_API_KEY` which is injected by the Vite build tool.
+// For local development, you must create a `.env` file in the project root and add `VITE_API_KEY="YOUR_API_KEY"`.
+// For deployment, you must set the `VITE_API_KEY` environment variable in your hosting provider's settings.
 
 const getApiKey = (): string => {
-    // In a real build system, `process.env.API_KEY` would be replaced at build time.
-    // For this environment, we are assuming it is available.
-    // Ensure you have a valid API Key set in your environment variables.
-    const apiKey = process.env.API_KEY;
+    const apiKey = import.meta.env.VITE_API_KEY;
     if (!apiKey) {
-        console.error("API_KEY environment variable not set.");
-        throw new Error("API Key is missing. Please set the API_KEY environment variable in your deployment settings.");
+        console.error("VITE_API_KEY environment variable not set.");
+        throw new Error("API Key is missing. Please set the VITE_API_KEY environment variable. If running locally, create a .env file. See README.md for more details.");
     }
     return apiKey;
 };
@@ -21,13 +18,13 @@ let ai: GoogleGenAI;
 try {
    ai = new GoogleGenAI({ apiKey: getApiKey() });
 } catch(e) {
-    console.error(e);
+    console.error("Failed to initialize GoogleGenAI. Ensure your VITE_API_KEY is correct.", e);
 }
 
 
 export const askAboutProject = async (projectContext: string, question: string): Promise<string> => {
     if(!ai) {
-        throw new Error("GoogleGenAI client not initialized. Please check your API key is configured correctly in your deployment environment.");
+        throw new Error("GoogleGenAI client not initialized. Please check your API key is configured correctly.");
     }
 
     const model = 'gemini-2.5-flash';
@@ -68,7 +65,7 @@ ${projectContext}
         let errorMessage = "An error occurred while communicating with the AI. Please try again later.";
         if (error instanceof Error) {
             if (error.message.includes('API key not valid')) {
-                errorMessage = "The provided API Key is not valid. Please check your credentials in your deployment settings.";
+                errorMessage = "The provided API Key is not valid. Please check your credentials in your .env file or deployment settings.";
             } else if (error.message.includes('fetch')) {
                  errorMessage = "A network error occurred. Please check your connection and firewall settings.";
             } else {

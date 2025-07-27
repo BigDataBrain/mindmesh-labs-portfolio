@@ -9,7 +9,6 @@ import Footer from '../components/Footer';
 import StatsSummary from '../components/StatsSummary';
 import LeadLogTable from '../components/LeadLogTable';
 import AdminSettings from '../components/AdminSettings';
-import CredentialsSettings from '../components/CredentialsSettings';
 import { UserIcon, WrenchScrewdriverIcon } from '../components/Icons';
 
 interface AdminDashboardProps {
@@ -20,7 +19,6 @@ interface AdminDashboardProps {
 }
 
 type AdminView = 'projects' | 'settings';
-type SettingsView = 'general' | 'security';
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onGoToPublic, theme, toggleTheme }) => {
     const [projects, setProjects] = useState<Project[]>([]);
@@ -30,7 +28,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onGoToPublic,
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingProject, setEditingProject] = useState<Project | null>(null);
     const [currentView, setCurrentView] = useState<AdminView>('projects');
-    const [currentSettingsView, setCurrentSettingsView] = useState<SettingsView>('general');
 
     const loadData = useCallback(async () => {
         setIsLoading(true);
@@ -45,7 +42,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onGoToPublic,
             setSettings(settingsData);
         } catch (error) {
             console.error("Failed to load admin data:", error);
-            // Optionally, set an error state to show in the UI
+            alert(`Failed to load dashboard data. Please check your connection and try refreshing the page. Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
         } finally {
             setIsLoading(false);
         }
@@ -71,25 +68,40 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onGoToPublic,
     };
 
     const handleFormSubmit = async (projectData: Omit<Project, 'id' | 'created_at'> | Project) => {
-        if ('id' in projectData) {
-            await api.updateProject(projectData as Project);
-        } else {
-            await api.createProject(projectData);
+        try {
+            if ('id' in projectData) {
+                await api.updateProject(projectData as Project);
+            } else {
+                await api.createProject(projectData as Omit<Project, 'id' | 'created_at'>);
+            }
+            await loadData();
+            handleCloseModal();
+        } catch (error) {
+            console.error("Failed to save project:", error);
+            alert(`Error saving project. Make sure you are connected and have the correct permissions. Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
-        await loadData();
-        handleCloseModal();
     };
     
     const handleDeleteProject = async (projectId: number) => {
-        await api.deleteProject(projectId);
-        await loadData();
+        try {
+            await api.deleteProject(projectId);
+            await loadData();
+        } catch (error) {
+            console.error("Failed to delete project:", error);
+            alert(`Error deleting project. Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
     };
 
     const handleToggleStatus = async (projectId: number) => {
         const project = projects.find(p => p.id === projectId);
         if (project) {
-            await api.updateProject({ ...project, isActive: !project.isActive });
-            await loadData();
+            try {
+                await api.updateProject({ ...project, isActive: !project.isActive });
+                await loadData();
+            } catch (error) {
+                console.error("Failed to update project status:", error);
+                alert(`Error updating project status. Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            }
         }
     };
 
@@ -111,22 +123,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onGoToPublic,
         {children}
         </button>
     );
-    
-    const SettingsTabButton: React.FC<{
-        isActive: boolean;
-        onClick: () => void;
-        children: React.ReactNode;
-    }> = ({ isActive, onClick, children }) => (
-         <button
-            onClick={onClick}
-            className={`px-4 py-2 font-medium text-sm rounded-md ${
-                isActive ? 'bg-gray-200 dark:bg-[#30363d] text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#21262d]'
-            }`}
-        >
-            {children}
-        </button>
-    );
-
 
     return (
         <div className="bg-gray-100 dark:bg-[#0D1117] min-h-screen">
@@ -178,16 +174,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onGoToPublic,
                     </>
                 ) : currentView === 'settings' && (
                     <div className="bg-white dark:bg-[#161B22] border border-gray-200 dark:border-[#30363d] rounded-lg p-6">
-                        <div className="flex items-center space-x-2 border-b border-gray-200 dark:border-[#30363d] pb-4 mb-6">
-                            <SettingsTabButton isActive={currentSettingsView === 'general'} onClick={() => setCurrentSettingsView('general')}>General</SettingsTabButton>
-                            <SettingsTabButton isActive={currentSettingsView === 'security'} onClick={() => setCurrentSettingsView('security')}>Security</SettingsTabButton>
-                        </div>
-                        {currentSettingsView === 'general' && settings && <AdminSettings initialSettings={settings} onSettingsUpdate={loadData} />}
-                        {currentSettingsView === 'security' && <CredentialsSettings />}
+                        {settings ? <AdminSettings initialSettings={settings} onSettingsUpdate={loadData} /> : <p>Loading settings...</p>}
                     </div>
                 )}
             </main>
-            <Footer onGoToAdmin={() => {}} />
+            <Footer onGoToAdmin={() => setCurrentView('projects')} showAdminLink={false} />
             
             <Modal
                 isOpen={isModalOpen}

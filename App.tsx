@@ -10,7 +10,8 @@ type View = 'public' | 'login' | 'admin';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('public');
-  const [isAuthenticated, setIsAuthenticated] = useState(api.isAuthenticated());
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthLoading, setAuthLoading] = useState(true);
   const [theme, setTheme] = useState<'dark' | 'light'>(
     localStorage.getItem('theme') === 'light' ? 'light' : 'dark'
   );
@@ -26,36 +27,68 @@ const App: React.FC = () => {
     }
     localStorage.setItem('theme', theme);
   }, [theme]);
+  
+  useEffect(() => {
+    setAuthLoading(true);
+    const checkSession = async () => {
+        const session = await api.getSession();
+        const loggedIn = !!session;
+        setIsAuthenticated(loggedIn);
+        // If logged in, default to admin view, otherwise public
+        setCurrentView(loggedIn ? 'admin' : 'public');
+        setAuthLoading(false);
+    };
+    checkSession();
 
-  const handleLoginSuccess = () => {
-    setIsAuthenticated(true);
-    setCurrentView('admin');
-  };
+    const { subscription } = api.onAuthStateChange((_event, session) => {
+        const loggedIn = !!session;
+        setIsAuthenticated(loggedIn);
+        if (_event === 'SIGNED_IN') {
+             setCurrentView('admin');
+        } else if (_event === 'SIGNED_OUT') {
+            setCurrentView('public');
+        }
+    });
 
-  const handleLogout = () => {
-    api.logout();
-    setIsAuthenticated(false);
-    setCurrentView('public');
+    return () => {
+        subscription.unsubscribe();
+    };
+  }, []);
+
+
+  const handleLogout = async () => {
+    await api.logout();
+    // onAuthStateChange listener will handle setting view to public
   };
 
   const toggleTheme = () => {
     setTheme(prevTheme => (prevTheme === 'dark' ? 'light' : 'dark'));
   };
+
+  const goToAdminArea = () => {
+      if (isAuthenticated) {
+          setCurrentView('admin');
+      } else {
+          setCurrentView('login');
+      }
+  };
   
   const renderView = () => {
+    // If we're booting or still checking auth, show the loader
+    if (isBooting || isAuthLoading) {
+        return <BootLoader onBootComplete={() => setIsBooting(false)} />;
+    }
+
     if (currentView === 'login') {
-      return <LoginPage onLoginSuccess={handleLoginSuccess} onGoToPublic={() => setCurrentView('public')} theme={theme} toggleTheme={toggleTheme} />;
+      return <LoginPage onLoginSuccess={() => setCurrentView('admin')} onGoToPublic={() => setCurrentView('public')} theme={theme} toggleTheme={toggleTheme} />;
     }
     
     if (currentView === 'admin' && isAuthenticated) {
         return <AdminDashboard onLogout={handleLogout} onGoToPublic={() => setCurrentView('public')} theme={theme} toggleTheme={toggleTheme} />;
     }
     
-    return <PublicPortfolio onGoToAdmin={() => setCurrentView('login')} theme={theme} toggleTheme={toggleTheme} />;
-  }
-
-  if (isBooting) {
-    return <BootLoader onBootComplete={() => setIsBooting(false)} />;
+    // Default to PublicPortfolio, which is also the view for logged-out users.
+    return <PublicPortfolio onGoToAdmin={goToAdminArea} theme={theme} toggleTheme={toggleTheme} />;
   }
 
   return (

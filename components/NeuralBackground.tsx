@@ -18,6 +18,7 @@ const NeuralBackground: React.FC<NeuralBackgroundProps> = ({ theme }) => {
     let mouse = { x: -200, y: -200, radius: 100 };
 
     const resizeCanvas = () => {
+      if (!canvas) return;
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
       init();
@@ -49,6 +50,7 @@ const NeuralBackground: React.FC<NeuralBackgroundProps> = ({ theme }) => {
       }
 
       update() {
+        if (!canvas) return;
         if (this.x > canvas.width || this.x < 0) this.directionX = -this.directionX;
         if (this.y > canvas.height || this.y < 0) this.directionY = -this.directionY;
         
@@ -77,6 +79,7 @@ const NeuralBackground: React.FC<NeuralBackgroundProps> = ({ theme }) => {
     }
 
     const init = () => {
+      if (!canvas) return;
       particles = [];
       const numberOfParticles = (canvas.height * canvas.width) / 9000;
       const color = theme === 'dark' ? 'rgba(0, 255, 195, 0.5)' : 'rgba(0, 100, 120, 0.5)';
@@ -91,7 +94,7 @@ const NeuralBackground: React.FC<NeuralBackgroundProps> = ({ theme }) => {
     };
 
     const connect = () => {
-        if(!ctx) return;
+        if (!canvas || !ctx) return;
         let opacityValue = 1;
         for (let a = 0; a < particles.length; a++) {
             for (let b = a; b < particles.length; b++) {
@@ -139,7 +142,9 @@ const NeuralBackground: React.FC<NeuralBackgroundProps> = ({ theme }) => {
     return () => {
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener('resize', resizeCanvas);
-      canvas.removeEventListener('mousemove', handleMouseMove);
+      if (canvas) {
+        canvas.removeEventListener('mousemove', handleMouseMove);
+      }
     };
   }, [theme]);
 

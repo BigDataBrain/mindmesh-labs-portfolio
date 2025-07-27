@@ -28,8 +28,8 @@ const PublicPortfolio: React.FC<PublicPortfolioProps> = ({ theme, toggleTheme, o
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
   const loadData = useCallback(async () => {
+    setIsLoading(true);
     try {
-      setIsLoading(true);
       const [allProjects, siteSettings] = await Promise.all([
         api.getProjects(),
         api.getSettings(),
@@ -38,6 +38,7 @@ const PublicPortfolio: React.FC<PublicPortfolioProps> = ({ theme, toggleTheme, o
       setSettings(siteSettings);
     } catch (error) {
       console.error("Failed to load portfolio data:", error);
+      // You could set an error state here to show a message to the user
     } finally {
       setIsLoading(false);
     }
@@ -47,14 +48,9 @@ const PublicPortfolio: React.FC<PublicPortfolioProps> = ({ theme, toggleTheme, o
     loadData();
   }, [loadData]);
 
-  // const handleReset = useCallback(() => {
-  //   setSearchTerm('');
-  //   setTechFilter('All');
-  //   setSortBy('Most Recent');
-  // }, []);
-
   const availableTechs = useMemo(() => {
-    const allTechs = new Set(projects.flatMap(p => p.technologies));
+    if (!projects) return [];
+    const allTechs = new Set(projects.flatMap(p => p.technologies || []));
     return Array.from(allTechs).sort();
   }, [projects]);
   
@@ -70,14 +66,20 @@ const PublicPortfolio: React.FC<PublicPortfolioProps> = ({ theme, toggleTheme, o
 
   const handleLeadSubmit = async (email: string, phone: string) => {
     if (selectedProject) {
+      try {
         await api.createLead({ email, phone, projectId: selectedProject.id, projectName: selectedProject.name });
         setLeadModalOpen(false);
         window.open(selectedProject.projectUrl, '_blank');
         setSelectedProject(null);
+      } catch(error) {
+        alert("Sorry, there was an error submitting your information. Please try again.");
+        console.error(error);
+      }
     }
   };
 
   const filteredAndSortedProjects = useMemo(() => {
+    if (!projects) return [];
     return projects
       .filter(project => {
         const searchLower = searchTerm.toLowerCase();
@@ -85,8 +87,8 @@ const PublicPortfolio: React.FC<PublicPortfolioProps> = ({ theme, toggleTheme, o
           searchLower.trim() === '' ||
           project.name.toLowerCase().includes(searchLower) ||
           project.shortDescription.toLowerCase().includes(searchLower) ||
-          project.technologies.some(t => t.toLowerCase().includes(searchLower));
-        const matchesTech = techFilter === 'All' || project.technologies.includes(techFilter);
+          (project.technologies && project.technologies.some(t => t.toLowerCase().includes(searchLower)));
+        const matchesTech = techFilter === 'All' || (project.technologies && project.technologies.includes(techFilter));
         return matchesSearch && matchesTech;
       })
       .sort((a, b) => {
@@ -104,7 +106,7 @@ const PublicPortfolio: React.FC<PublicPortfolioProps> = ({ theme, toggleTheme, o
       <main className="flex-grow max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-12 w-full">
         <Header 
             title={settings?.siteTitle || "Portfolio"}
-            subtitle={settings?.siteTagline || "Loading..."}
+            subtitle={settings?.siteTagline || "Showcasing innovative projects."}
             aboutMe={settings?.aboutMe}
             onRefresh={loadData} 
             theme={theme} 
@@ -137,11 +139,11 @@ const PublicPortfolio: React.FC<PublicPortfolioProps> = ({ theme, toggleTheme, o
               </div>
             )}
             <div className="border-b border-gray-200 dark:border-[#30363d] my-12"></div>
-            <ContactForm />
+            <ContactForm settings={settings} />
           </>
         )}
       </main>
-      <Footer onGoToAdmin={onGoToAdmin} />
+      <Footer onGoToAdmin={onGoToAdmin} showAdminLink={true} />
       {selectedProject && (
         <LeadCaptureModal
             isOpen={isLeadModalOpen}

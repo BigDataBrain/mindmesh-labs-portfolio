@@ -4,7 +4,7 @@ import { Settings } from '../types';
 
 interface AdminSettingsProps {
     initialSettings: Settings;
-    onSettingsUpdate: () => void;
+    onSettingsUpdate: () => Promise<void>;
 }
 
 const InputField: React.FC<React.InputHTMLAttributes<HTMLInputElement> & { label: string }> = ({ label, ...props }) => (
@@ -43,28 +43,30 @@ const AdminSettings: React.FC<AdminSettingsProps> = ({ initialSettings, onSettin
         setIsLoading(true);
         setSaveStatus('');
         try {
-            await api.updateSettings(settings);
-            onSettingsUpdate();
+            const { id, ...settingsToUpdate } = settings;
+            await api.updateSettings(settingsToUpdate);
+            await onSettingsUpdate();
             setSaveStatus('Settings saved successfully!');
         } catch (error) {
-            setSaveStatus('Error saving settings.');
+            const message = error instanceof Error ? error.message : "Unknown error";
+            setSaveStatus(`Error saving settings: ${message}`);
             console.error(error);
         } finally {
             setIsLoading(false);
-            setTimeout(() => setSaveStatus(''), 3000);
+            setTimeout(() => setSaveStatus(''), 4000);
         }
     };
 
     return (
         <form onSubmit={handleSave} className="space-y-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Branding &amp; Content</h3>
-            <InputField label="Site Title" name="siteTitle" value={settings.siteTitle} onChange={handleChange} />
-            <InputField label="Site Tagline" name="siteTagline" value={settings.siteTagline} onChange={handleChange} />
-            <TextAreaField label="About Me Section" name="aboutMe" value={settings.aboutMe} onChange={handleChange} />
+            <InputField label="Site Title" name="siteTitle" value={settings.siteTitle} onChange={handleChange} disabled={isLoading} />
+            <InputField label="Site Tagline" name="siteTagline" value={settings.siteTagline} onChange={handleChange} disabled={isLoading} />
+            <TextAreaField label="About Me Section" name="aboutMe" value={settings.aboutMe} onChange={handleChange} disabled={isLoading} />
             
             <div className="border-t border-gray-200 dark:border-[#30363d] pt-6">
                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Contact Form</h3>
-                <InputField label="Destination Email" name="contactEmail" type="email" value={settings.contactEmail} onChange={handleChange} />
+                <InputField label="Destination Email" name="contactEmail" type="email" value={settings.contactEmail} onChange={handleChange} disabled={isLoading} />
             </div>
 
             <div className="flex justify-end items-center space-x-4">

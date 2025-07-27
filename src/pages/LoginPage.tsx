@@ -9,6 +9,13 @@ interface LoginPageProps {
   toggleTheme: () => void;
 }
 
+const InputField: React.FC<React.InputHTMLAttributes<HTMLInputElement>> = (props) => (
+    <input
+        {...props}
+        className="bg-gray-100 dark:bg-[#010409] border border-gray-300 dark:border-[#30363d] text-gray-900 dark:text-gray-300 rounded-md block w-full px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+    />
+);
+
 const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onGoToPublic, theme, toggleTheme }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -20,22 +27,17 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onGoToPublic, the
     setError('');
     setIsLoading(true);
     
-    const { error } = await api.login(email, password);
+    // The new api.ts will have the correct async Supabase login method
+    const { error: loginError } = await api.login(email, password);
     
     setIsLoading(false);
-    if (error) {
-      setError(error.message || 'Invalid login credentials. Please try again.');
+    if (loginError) {
+      setError(loginError.message || 'Invalid login credentials. Please try again.');
     } else {
+      // The onAuthStateChange listener in App.tsx will handle the view change
       onLoginSuccess();
     }
   };
-
-  const InputField: React.FC<React.InputHTMLAttributes<HTMLInputElement>> = (props) => (
-    <input
-        {...props}
-        className="bg-gray-100 dark:bg-[#010409] border border-gray-300 dark:border-[#30363d] text-gray-900 dark:text-gray-300 rounded-md block w-full px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-    />
-  );
 
 
   return (
